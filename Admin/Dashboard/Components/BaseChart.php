@@ -8,6 +8,12 @@ abstract class BaseChart
     
     /** @var integer */
     protected $days_range = 30;
+    
+    /** @var \DateTime */
+    protected $date_start;
+    
+    /** @var \DateTime */
+    protected $date_end;
 
     /** @var string */
     protected $format = 'Y-m-d';
@@ -26,18 +32,24 @@ abstract class BaseChart
      */
     public function prepareResult()
     {
+        if (!$this->date_start instanceof \DateTime || !$this->date_end instanceof \DateTime) {
+            $this->date_start = new \DateTime('-' . $this->getDaysRange() . ' days');
+            $this->date_end = new \DateTime('now');
+        }
+        
         // init
-        $date = $this->getRelativeDateByDays();
         $views = array();
-        $last_timestamp = $date;
+        $last_timestamp = $this->date_start;
 
         // views
         for ($i = 0; $i <= $this->getDaysRange(); $i++) {
-            $views[ date($this->getFormat(), $last_timestamp) ] = 0;
-            $last_timestamp = strtotime('+1 day', $last_timestamp);
+            $views[ $last_timestamp->format($this->getFormat()) ] = 0;
+            
+            if ($last_timestamp->diff($this->date_end)->days > 0) {
+                $last_timestamp->modify('+1 day');
+            }
         }
-
-
+        
         // collect to days
         foreach($this->getResult() as $key => $entry) {
             $day = date($this->getFormat(), strtotime($entry[ $this->getProperty() ]));
@@ -195,6 +207,47 @@ abstract class BaseChart
 
         return $this;
     }
+    
+    /**
+     * @return \DateTime
+     */
+    public function getDateStart()
+    {
+        return $this->date_start;
+    }
+    
+    /**
+     * @param \DateTime $date_start
+     *
+     * @return BaseChart
+     */
+    public function setDateStart($date_start)
+    {
+        $this->date_start = $date_start;
+        
+        return $this;
+    }
+    
+    /**
+     * @return \DateTime
+     */
+    public function getDateEnd()
+    {
+        return $this->date_end;
+    }
+    
+    /**
+     * @param \DateTime $date_end
+     *
+     * @return BaseChart
+     */
+    public function setDateEnd($date_end)
+    {
+        $this->date_end = $date_end;
+        
+        return $this;
+    }
+    
     
     /**
      * @param bool $format
