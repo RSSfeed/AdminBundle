@@ -1,6 +1,7 @@
 <?php
 namespace ITF\AdminBundle\Form\Type;
 
+use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -32,7 +33,7 @@ class SelectizeMultipleType extends SelectizeTreeType
         $resolver->setDefaults($this->defaults);
     }
     
-	public function getName()
+    public function getName()
 	{
 		return 'selectize_multiple';
 	}

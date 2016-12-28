@@ -17,6 +17,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class SelectizeTreeType extends AbstractType
 {
 	private $container;
+    private $options = [];
 
 	protected $defaults = array(
 		'attr' => array(
@@ -57,6 +58,7 @@ class SelectizeTreeType extends AbstractType
 
 	public function buildForm(FormBuilderInterface $builder, array $options)
 	{
+	    $this->options = $options;
 		$builder->addEventListener(FormEvents::PRE_SUBMIT, array($this, 'onPreSetData'));
 	}
 
@@ -155,8 +157,12 @@ class SelectizeTreeType extends AbstractType
 
 		// set init to int
 		$this->defaults['selectize']['init'] = (int) $this->defaults['selectize']['init'];
-
-		$view->vars = array_merge($view->vars, $this->defaults);
+        
+        
+		$view->vars = array_replace_recursive($view->vars, $this->defaults);
+        
+        // merge attrs form options (workaround)
+		$view->vars['attr'] = array_merge($view->vars['attr'], $options['attr']);
 	}
 
 	public function getParent()
