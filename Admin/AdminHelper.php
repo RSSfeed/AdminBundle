@@ -155,28 +155,45 @@ class AdminHelper
 		);
 
 		$meta = $this->em->getMetadataFactory()->getAllMetadata();
-
+        $matches = [];
+        
 		/* @var \Doctrine\ORM\Mapping\ClassMetadata $m */
 		foreach ($meta as $m) {
-			//pre($m);
 			$name = $m->getName();
-			if (preg_match('/'.$entity.'$/i', $name)) {
-				$rfl = $m->getReflectionClass();
-
-				preg_match('/^((.*?)Bundle)/', $name, $match);
-
-				$info['entity_fq'] = $name;
-				$info['entity_short'] = str_replace($rfl->getNamespaceName() . '\\', '', $name);
-				$info['bundle'] = $match[1];
-				$info['bundle_short'] = strtolower($match[2]);
-				$info['namespace'] = $rfl->getNamespaceName();
-				$info['repository'] = $info['bundle'] . ':' . $info['entity_short'];
-
-				return $info;
+            
+            if (preg_match('/'.$entity.'$/i', $name)) {
+                $matches[$name] = $m;
 			}
 		}
+		
+		// if multiple matches, take the closest
+        if (count($matches) > 1) {
+            foreach($matches as $m) {
+                if (preg_match('/[\\\]'.$entity.'$/i', $m->getName())) {
+                    $match = $m;
+                }
+            }
+        } else {
+            $match = $matches[key($matches)];
+        }
+        
+        if (!isset($match)) {
+            throw new \Exception(sprintf("could not find entity %s meta data", $entity));
+        }
+        
+        $name = $match->getName();
+        $rfl = $m->getReflectionClass();
+        
+        preg_match('/^((.*?)Bundle)/', $name, $match);
 
-		return false;
+        $info['entity_fq'] = $name;
+        $info['entity_short'] = str_replace($rfl->getNamespaceName() . '\\', '', $name);
+        $info['bundle'] = $match[1];
+        $info['bundle_short'] = strtolower($match[2]);
+        $info['namespace'] = $rfl->getNamespaceName();
+        $info['repository'] = $info['bundle'] . ':' . $info['entity_short'];
+
+        return $info;
 	}
 
 	/**

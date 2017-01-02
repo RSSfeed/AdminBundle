@@ -4,6 +4,7 @@ namespace ITF\AdminBundle\Controller\Upload;
 use AppBundle\Entity\PostMedia;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Config\Definition\Exception\Exception;
+use Symfony\Component\Debug\Exception\ClassNotFoundException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -50,10 +51,20 @@ class FineuploaderController extends Controller
     public function getFileList(Request $request, $bundle, $entity, $property, $id, $fk_bundle, $fk_entity)
     {
         $em = $this->getDoctrine()->getManager();
-
+        
+        // full qualified, try
+        if (preg_match('/[\\\]/', $entity)) {
+            $entity = $this->get('itf.admin_helper')->getEntityNameFromClass($entity);
+        }
+        
+        if (preg_match('/[\\\]/', $fk_entity)) {
+            $fk_entity = $this->get('itf.admin_helper')->getEntityNameFromClass($fk_entity);
+        }
+    
         // entity
         $entity_info = $this->get('itf.admin_helper')->getEntityInfo($entity);
         $entity = $em->getRepository($entity_info['repository'])->find($id);
+    
 
         // if not foreign joined
         if ($fk_entity == 'NULL') {
@@ -88,6 +99,15 @@ class FineuploaderController extends Controller
      */
     public function doUpload(Request $request, $bundle, $entity, $property, $id, $fk_bundle, $fk_entity)
     {
+        // full qualified, try
+        if (preg_match('/[\\\]/', $entity)) {
+            $entity = $this->get('itf.admin_helper')->getEntityNameFromClass($entity);
+        }
+    
+        if (preg_match('/[\\\]/', $fk_entity)) {
+            $fk_entity = $this->get('itf.admin_helper')->getEntityNameFromClass($fk_entity);
+        }
+        
         $attribute = 'qqfile';
         $qquuid = $request->request->get('qquuid');
         $em = $this->getDoctrine()->getManager();
