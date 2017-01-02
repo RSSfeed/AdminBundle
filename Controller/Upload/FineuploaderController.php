@@ -199,6 +199,14 @@ class FineuploaderController extends Controller
      */
     public function doDelete(Request $request, $bundle, $entity, $property, $id, $fk_bundle, $fk_entity)
     {
+        if (preg_match('/[\\\]/', $entity)) {
+            $entity = $this->get('itf.admin_helper')->getEntityNameFromClass($entity);
+        }
+    
+        if (preg_match('/[\\\]/', $fk_entity)) {
+            $fk_entity = $this->get('itf.admin_helper')->getEntityNameFromClass($fk_entity);
+        }
+        
         /*if (!$request->isMethod('DELETE')) {
             return new JsonResponse(array(
                 'success' => false,
