@@ -182,7 +182,7 @@ class AdminHelper
         }
         
         $name = $match->getName();
-        $rfl = $m->getReflectionClass();
+        $rfl = $match->getReflectionClass();
         
         preg_match('/^((.*?)Bundle)/', $name, $match);
 
