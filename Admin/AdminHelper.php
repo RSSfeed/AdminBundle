@@ -142,6 +142,9 @@ class AdminHelper
 
 	public function getEntityInfo($entity)
 	{
+		//cleanup from doctrine proxy namespace:
+		$entity = str_replace('Proxies\__CG__\\', '', $entity);
+		
 		$entity = str_replace('\\', '\\\\', $entity);
 
 		$info = array(
