@@ -160,7 +160,7 @@ class FineuploaderController extends Controller
 
         // upload
         try {
-            $file_name = $this->get('vichimagine.uploader')->upload($file, $property_mapping);
+            $file_name = $this->get('vichimagine.uploader')->upload($file, $property_mapping, null, $entity);
 
             $result['success'] = true;
             $result['name'] = $file_name;
