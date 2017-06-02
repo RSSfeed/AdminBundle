@@ -212,7 +212,7 @@ class AdminHelper
 		/* @var \Doctrine\ORM\Mapping\ClassMetadata $m */
 		foreach($meta as $m) {
 			$_entity = $m->getName();
-			if (preg_match('/'.$bundle.'.*?'.$entity.'/i', $_entity)) {
+			if (preg_match('/'.$bundle.'.*?[\\\]'.$entity.'/i', $_entity)) {
 				return new $_entity();
 			}
 		}
