@@ -159,7 +159,7 @@ class AdminHelper
 
 		$meta = $this->em->getMetadataFactory()->getAllMetadata();
         $matches = [];
-        
+
 		/* @var \Doctrine\ORM\Mapping\ClassMetadata $m */
 		foreach ($meta as $m) {
 			$name = $m->getName();
@@ -168,7 +168,7 @@ class AdminHelper
                 $matches[$name] = $m;
 			}
 		}
-		
+
 		// if multiple matches, take the closest
         if (count($matches) > 1) {
             foreach($matches as $m) {
@@ -209,15 +209,36 @@ class AdminHelper
 	{
 		$meta = $this->em->getMetadataFactory()->getAllMetadata();
 
+		$matches = [];
+
 		/* @var \Doctrine\ORM\Mapping\ClassMetadata $m */
 		foreach($meta as $m) {
 			$_entity = $m->getName();
-			if (preg_match('/'.$bundle.'.*?[\\\]'.$entity.'/i', $_entity)) {
-				return new $_entity();
+			if (preg_match('/'.$bundle.'.*?'.$entity.'/i', $_entity)) {
+//				return new $_entity();
+                $matches[$_entity] = $m;
 			}
 		}
 
-		return false;
+        // if multiple matches, take the closest
+        if (count($matches) > 1) {
+            foreach($matches as $m) {
+                if (preg_match('/[\\\]'.$entity.'$/i', $m->getName())) {
+                    $match = $m;
+                }
+            }
+        } else {
+            $match = $matches[key($matches)];
+        }
+
+        if (!isset($match)) {
+            throw new \Exception(sprintf("could not find entity %s meta data", $entity));
+        }
+        
+        $entity = $match->getName();
+		
+		return new $entity();
+        
 	}
 
 	public function getEntityClassByName($name)
@@ -713,25 +734,6 @@ class AdminHelper
 				$datatable->setOrder($order_field, $order_direction);
 			}
 		}
-
-		// set mass action
-		/*$datatable->setHasAction(true);
-		$datatable->setMultiple(
-				array(
-					'delete' => array(
-						'title' => 'Delete',
-						'route' => 'admin_mass_delete' // path to multiple delete route
-					)
-				)
-			);*/
-
-		/** @var \Doctrine\ORM\QueryBuilder $qb */
-		/*$qb = $datatable->getQueryBuilder()->getDoctrineQueryBuilder();
-		dump($qb->getQuery()->getSQL());*/
-
-		//pre($this->dtGetColumnByProperty('id', $fields));exit;
-
-
 
 		return $datatable;
 	}
