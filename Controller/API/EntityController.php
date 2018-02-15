@@ -40,8 +40,17 @@ class EntityController extends Controller
     {
         $this->bundle = $bundle;
         $this->entity = $entity;
+        $ah = $this->get('itf.admin_helper');
+        $ah->setBundle($bundle);
+        $ah->setEntity($entity);
+        $config = $this->get('itf.admin.config');
+        
+        $qb = NULL;
+        if ($config->getIndexService() !== NULL) {
+            $qb = $config->getIndexService()->getQueryBuilder();
+        }
 
-        $query = $this->getQueryBuilder()->getQuery();
+        $query = $this->getQueryBuilder($qb)->getQuery();
 
         if ($this->getOption('query', false)) {
             //var_dump($this->getOption('query', false));exit;
@@ -68,44 +77,25 @@ class EntityController extends Controller
     {
         $this->bundle = $bundle;
         $this->entity = $entity;
-
-        $em = $this->getDoctrine()->getManager();
-        $tableName = $em->getClassMetadata(get_class($this->getInstance($bundle, $entity)))->getTableName();
-
-        // prepare sql
-        $sql = "SELECT count(id) as " . self::COUNT_ATTRIBUTE . " FROM " . $tableName;
-
-        // if querystring
-        if ($this->getOption('query', false)) {
-            $fieldNames = $this->getSearchableFieldnames();
-            $queryString = $this->getPrepareQueryString();
-
-            // add where
-            $sql .= ' WHERE ';
-
-            // if wildcards had to be replaced and more than one fieldname available
-            $operator = $this->replaceQueryWildcards(NULL, true) && count($fieldNames) == 1
-                ? '='
-                : 'LIKE'
-            ;
-
-            for ($i = 0; $i < count($fieldNames); $i++) {
-                if ($i > 0) {
-                    $sql .= 'OR ';
-                }
-
-                $sql .= $fieldNames[$i] . ' ' . $operator . ' "' . $queryString . '" ';
-            }
+        $ah = $this->get('itf.admin_helper');
+        $ah->setBundle($bundle);
+        $ah->setEntity($entity);
+        $config = $this->get('itf.admin.config');
+    
+        $qb = NULL;
+        if ($config->getIndexService() !== NULL) {
+            $qb = $config->getIndexService()->getQueryBuilder();
         }
-
-        /** @var EntityManager $em */
-        $em = $this->getDoctrine()->getManager();
-        $conn = $em->getConnection();
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
+    
+        $qb = $this->getQueryBuilder($qb);
+        
+        $count = @$qb
+            ->select('count(a.id) as _count')
+            ->getQuery()
+            ->getArrayResult()[0]['_count'];
 
         $data = array(
-            self::COUNT_ATTRIBUTE => (int) $stmt->fetch()[self::COUNT_ATTRIBUTE]
+            self::COUNT_ATTRIBUTE => (int) $count
         );
 
         return $this->serialize($data, $_format);
@@ -174,13 +164,16 @@ class EntityController extends Controller
     /**
      * @return \Doctrine\ORM\QueryBuilder
      */
-    private function getQueryBuilder()
+    private function getQueryBuilder($qb = NULL, $alias = 'a')
     {
-        $qb = $this->getRepository($this->bundle, $this->entity)->createQueryBuilder('a');
+        if ($qb === NULL) $qb = $this->getRepository($this->bundle, $this->entity)->createQueryBuilder($alias);
+        
+        //$qb = $this->getRepository($this->bundle, $this->entity)->createQueryBuilder('a');
+        
         $query = $qb
             ->setMaxResults($this->getOption('limit', self::DEFAULT_LIMIT))
             ->setFirstResult($this->getOption('offset', 0))
-            ->orderBy('a.' . $this->getOrderBy(), $this->getOrderDirection())
+            ->orderBy($alias . '.' . $this->getOrderBy(), $this->getOrderDirection())
         ;
 
         // if query set
@@ -192,16 +185,16 @@ class EntityController extends Controller
 
             if (count($fieldNames) == 1) {
                 if ($this->replaceQueryWildcards(NULL, true)) {
-                    $qb->where($qb->expr()->eq('a.' . $fieldNames[0], ':searchQuery'));
+                    $qb->where($qb->expr()->eq($alias . '.' . $fieldNames[0], ':searchQuery'));
                 } else {
-                    $qb->where($qb->expr()->like('a.' . $fieldNames[0], ':searchQuery'));
+                    $qb->where($qb->expr()->like($alias . '.' . $fieldNames[0], ':searchQuery'));
                 }
             } else {
                 for ($i = 0; $i < count($fieldNames); $i++) {
                     if ($i == 0) {
-                        $qb->where($qb->expr()->like('a.' . $fieldNames[ $i ], ':searchQuery'));
+                        $qb->where($qb->expr()->like($alias . '.' . $fieldNames[ $i ], ':searchQuery'));
                     } else {
-                        $qb->orWhere($qb->expr()->like('a.' . $fieldNames[ $i ], ':searchQuery'));
+                        $qb->orWhere($qb->expr()->like($alias . '.' . $fieldNames[ $i ], ':searchQuery'));
                     }
                 }
             }

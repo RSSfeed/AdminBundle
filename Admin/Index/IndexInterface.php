@@ -27,4 +27,9 @@ interface IndexInterface
      * @return mixed
      */
     public function renderItem($item);
+    
+    /**
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function getQueryBuilder();
 }
